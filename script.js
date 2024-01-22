@@ -81,12 +81,15 @@ function attachLinkEventListeners(links) {
   links.forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
-      const term = link.textContent.trim();
+      const term = link.textContent.trim().toLowerCase();
       const matchingItem = glossaryData.find(
-        (entry) => Object.keys(entry)[0] === term
+        (entry) => Object.keys(entry)[0].toLowerCase() === term
       );
-      glossaryModalTitle.textContent = term;
-      glossaryModalDescription.textContent = matchingItem[term];
+      if (matchingItem) {
+        glossaryModalTitle.textContent = Object.keys(matchingItem)[0];
+        glossaryModalDescription.textContent =
+          matchingItem[Object.keys(matchingItem)[0]];
+      }
     });
   });
 }
