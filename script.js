@@ -86,9 +86,9 @@ function attachLinkEventListeners(links) {
         (entry) => Object.keys(entry)[0].toLowerCase() === term
       );
       if (matchingItem) {
-        glossaryModalTitle.textContent = Object.keys(matchingItem)[0];
-        glossaryModalDescription.textContent =
-          matchingItem[Object.keys(matchingItem)[0]];
+        const originalTerm = Object.keys(matchingItem)[0];
+        glossaryModalTitle.textContent = originalTerm;
+        glossaryModalDescription.textContent = matchingItem[originalTerm];
       }
     });
   });
