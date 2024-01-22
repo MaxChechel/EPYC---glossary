@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Event listener for both text links and same-letter links
     glossaryLinksContainer.addEventListener("click", (e) => {
-      const link = e.target.closest("a");
+      const link = e.target.closest("a:not([data-audio])");
       if (!link) return; // If the click did not occur on a link element
 
       e.preventDefault();
