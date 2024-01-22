@@ -136,6 +136,12 @@ document.addEventListener("DOMContentLoaded", function () {
     )
       .then((response) => response.json())
       .then((data) => {
+        // Normalize the glossary data to lowercase
+        glossaryData = data.map((entry) => {
+          const key = Object.keys(entry)[0];
+          const description = entry[key].toLowerCase(); // Convert description to lowercase
+          return { [key.toLowerCase()]: description };
+        });
         // Sort the glossary data alphabetically
         glossaryData = data.sort((a, b) =>
           Object.keys(a)[0].localeCompare(Object.keys(b)[0])
