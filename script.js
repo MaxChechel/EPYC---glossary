@@ -189,6 +189,12 @@ document.addEventListener("DOMContentLoaded", function () {
         closeModal();
       });
     });
+    document.addEventListener("click", (e) => {
+      if (!glossaryModalContent.contains(e.target)) {
+        // Clicked outside of the modal, so close it
+        closeModal();
+      }
+    });
   }
 });
 
