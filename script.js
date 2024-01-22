@@ -26,7 +26,6 @@ let clickEventListener; // Declare a variable to store the click event listener
 
 function closeModalOnClick(e, triggerElement) {
   if (!glossaryModal.contains(e.target) && e.target !== triggerElement) {
-    console.log("event");
     closeModal();
   }
 }
