@@ -17,13 +17,22 @@ const glosaryModalSimilarLetter = glossaryModal?.querySelector(
 const glossaryModalTitle = glossaryModal?.querySelector("h3");
 const glossaryModalDescription = glossaryModal?.querySelector("p");
 
-//Data storage on page
+// Data storage on page
 let glossaryData;
 
 let lastFocusedElement;
+
+let clickEventListener; // Declare a variable to store the click event listener
+
+function closeModalOnClick(e, triggerElement) {
+  if (!glossaryModal.contains(e.target) && e.target !== triggerElement) {
+    console.log("event");
+    closeModal();
+  }
+}
+
 function openModal(triggerElement) {
   lastFocusedElement = triggerElement;
-  console.log(lastFocusedElement);
   glossaryModalParent.classList.add("is-active");
   glossaryModal.classList.add("is-active");
 
@@ -35,7 +44,14 @@ function openModal(triggerElement) {
 
   // Add keydown listener for Escape key when modal is open
   document.addEventListener("keydown", handleModalKeydown);
+
+  // Close outside modal
+  clickEventListener = (e) => closeModalOnClick(e, triggerElement); // Store the reference
+  document
+    .querySelector(".page-wrapper")
+    .addEventListener("click", clickEventListener);
 }
+
 function closeModal() {
   glossaryModalParent.classList.remove("is-active");
   glossaryModal.classList.remove("is-active");
@@ -46,6 +62,13 @@ function closeModal() {
 
   // Remove keydown listener when modal is closed
   document.removeEventListener("keydown", handleModalKeydown);
+
+  // Remove the click event listener using the stored reference
+  if (clickEventListener) {
+    document
+      .querySelector(".page-wrapper")
+      .removeEventListener("click", clickEventListener);
+  }
 }
 
 function createTermLinks(terms) {
@@ -61,7 +84,7 @@ function createTermLinks(terms) {
   });
 }
 
-//Accessibility
+// Accessibility
 // Function to handle keydown on glossary links
 function handleGlossaryLinkKeydown(e) {
   if (e.key === "Enter") {
@@ -85,15 +108,14 @@ function attachLinkEventListeners(links) {
       const matchingItem = glossaryData.find(
         (entry) => Object.keys(entry)[0].toLowerCase() === term
       );
-      if (matchingItem) {
-        const originalTerm = Object.keys(matchingItem)[0];
-        glossaryModalTitle.textContent = originalTerm;
-        glossaryModalDescription.textContent = matchingItem[originalTerm];
-      }
+      glossaryModalTitle.textContent = term;
+      glossaryModalDescription.textContent =
+        matchingItem[Object.keys(matchingItem)[0]];
     });
   });
 }
-//Check if database contains certain letter and delete letter if not
+
+// Check if database contains certain letter and delete letter if not
 function removeUnusedAlphabetLinks() {
   glossaryAlphabetLinks.forEach((link) => {
     const letter = link.textContent.trim();
@@ -145,38 +167,55 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       });
 
-    // Attach event listener to the container for all glossary links
+    // Event listener for both text links and same-letter links
     glossaryLinksContainer.addEventListener("click", (e) => {
       const link = e.target.closest("a");
       if (!link) return; // If the click did not occur on a link element
 
       e.preventDefault();
-      const term = link.textContent.trim();
-      const matchingItem = glossaryData.find(
-        (entry) => Object.keys(entry)[0] === term
+      const term = link.textContent.trim().toLowerCase(); // Convert term to lowercase
+      const matchingItems = glossaryData.filter((entry) =>
+        Object.keys(entry)[0].toLowerCase().startsWith(term)
       );
-      if (matchingItem) {
-        const firstLetter = term.charAt(0).toUpperCase();
+
+      if (matchingItems.length > 0) {
+        // Find the matching item with the longest prefix
+        const matchingItem = matchingItems.reduce((prev, current) => {
+          const prevTerm = Object.keys(prev)[0].toLowerCase();
+          const currentTerm = Object.keys(current)[0].toLowerCase();
+          return prevTerm.length > currentTerm.length ? prev : current;
+        });
+
+        const originalTerm = Object.keys(matchingItem)[0]; // Store the original term
+        const matchingDescription = matchingItem[originalTerm]; // Use the original term to retrieve description
+        glossaryModalTitle.textContent = originalTerm;
+        glossaryModalDescription.textContent = matchingDescription;
 
         // Filter terms with the same starting letter and exclude the current term
+        const firstLetter = term.charAt(0).toUpperCase();
         const newTermsWithSameLetter = glossaryData
           .filter(
             (entry) =>
-              Object.keys(entry)[0].charAt(0).toUpperCase() === firstLetter
+              Object.keys(entry)[0].charAt(0).toUpperCase() === firstLetter &&
+              Object.keys(entry)[0].toLowerCase() !== originalTerm.toLowerCase()
           )
-          .map((entry) => Object.keys(entry)[0]);
+          .map((entry) => {
+            const key = Object.keys(entry)[0];
+            return {
+              term: key.toLowerCase(), // Convert the key to lowercase
+              description: entry[key], // Use the original case description
+            };
+          });
 
         // Create links for terms with the same starting letter
-        const links = createTermLinks(newTermsWithSameLetter);
+        const links = createTermLinks(
+          newTermsWithSameLetter.map((entry) => entry.term)
+        );
 
         // Clear and insert the links into the wrapper
         glosaryModalSimilarLetter.innerHTML = "";
         attachLinkEventListeners(links);
         glosaryModalSimilarLetter.append(...links);
-
-        // Update text content of modal
-        glossaryModalTitle.textContent = term;
-        glossaryModalDescription.textContent = matchingItem[term];
 
         // Open modal
         openModal(link);
@@ -189,19 +228,15 @@ document.addEventListener("DOMContentLoaded", function () {
         closeModal();
       });
     });
-    document.addEventListener("click", (e) => {
-      if (!glossaryModalContent.contains(e.target)) {
-        // Clicked outside of the modal, so close it
-        closeModal();
-      }
-    });
   }
 });
 
 ///////
 // const glossaryLinksContainer = document.querySelector(".text-rich-text");
 // const glossaryModal = document.querySelector(".glossary-modal_component");
-
+// const glossaryModalContent = document.querySelector(
+//   ".glossary-modal_content-wrapper"
+// );
 // const glossaryModalParent = glossaryModal?.parentElement;
 
 // const glossaryModalClose = glossaryModal?.querySelectorAll(
@@ -219,13 +254,32 @@ document.addEventListener("DOMContentLoaded", function () {
 // //Data storage on page
 // let glossaryData;
 
-// function openModal() {
+// let lastFocusedElement;
+// function openModal(triggerElement) {
+//   lastFocusedElement = triggerElement;
+//   console.log(lastFocusedElement);
 //   glossaryModalParent.classList.add("is-active");
 //   glossaryModal.classList.add("is-active");
+
+//   // Add tabindex attribute to the modal title to make it focusable
+//   glossaryModalContent.setAttribute("tabindex", "-1");
+
+//   // Set focus on the modal title
+//   glossaryModalContent.focus();
+
+//   // Add keydown listener for Escape key when modal is open
+//   document.addEventListener("keydown", handleModalKeydown);
 // }
 // function closeModal() {
 //   glossaryModalParent.classList.remove("is-active");
 //   glossaryModal.classList.remove("is-active");
+
+//   if (lastFocusedElement) {
+//     lastFocusedElement.focus(); // Set focus back to the element that opened the modal
+//   }
+
+//   // Remove keydown listener when modal is closed
+//   document.removeEventListener("keydown", handleModalKeydown);
 // }
 
 // function createTermLinks(terms) {
@@ -233,18 +287,37 @@ document.addEventListener("DOMContentLoaded", function () {
 //     const termLink = document.createElement("a");
 //     termLink.href = "#";
 //     termLink.textContent = t;
-//     termLink.setAttribute("aria-label", "Learn more about Glossary Term");
+//     termLink.setAttribute("aria-label", `${t} glossary term`);
+
+//     // Add keydown event listener for Enter key
+//     termLink.addEventListener("keydown", handleGlossaryLinkKeydown);
 //     return termLink;
 //   });
+// }
+
+// //Accessibility
+// // Function to handle keydown on glossary links
+// function handleGlossaryLinkKeydown(e) {
+//   if (e.key === "Enter") {
+//     // Simulate a click event
+//     this.click();
+//   }
+// }
+
+// // Function to handle keydown for closing modal
+// function handleModalKeydown(e) {
+//   if (e.key === "Escape") {
+//     closeModal();
+//   }
 // }
 
 // function attachLinkEventListeners(links) {
 //   links.forEach((link) => {
 //     link.addEventListener("click", (e) => {
 //       e.preventDefault();
-//       const term = link.textContent.trim();
+//       const term = link.textContent.trim().toLowerCase();
 //       const matchingItem = glossaryData.find(
-//         (entry) => Object.keys(entry)[0] === term
+//         (entry) => Object.keys(entry)[0].toLowerCase() === term
 //       );
 //       glossaryModalTitle.textContent = term;
 //       glossaryModalDescription.textContent = matchingItem[term];
@@ -260,7 +333,7 @@ document.addEventListener("DOMContentLoaded", function () {
 //     );
 
 //     if (!wordsStartingWithLetter) {
-//       link.remove(); // Remove the alphabet link if no words start with this letter
+//       link.parentElement.remove(); // Remove the alphabet link if no words start with this letter
 //     }
 //   });
 // }
@@ -303,41 +376,57 @@ document.addEventListener("DOMContentLoaded", function () {
 //         });
 //       });
 
-//     // Attach event listener to the container for all glossary links
 //     glossaryLinksContainer.addEventListener("click", (e) => {
 //       const link = e.target.closest("a");
 //       if (!link) return; // If the click did not occur on a link element
 
 //       e.preventDefault();
-//       const term = link.textContent.trim();
-//       const matchingItem = glossaryData.find(
-//         (entry) => Object.keys(entry)[0] === term
+//       const term = link.textContent.trim().toLowerCase(); // Convert term to lowercase
+//       const matchingItems = glossaryData.filter((entry) =>
+//         Object.keys(entry)[0].toLowerCase().startsWith(term)
 //       );
-//       if (matchingItem) {
-//         const firstLetter = term.charAt(0).toUpperCase();
+
+//       if (matchingItems.length > 0) {
+//         // Find the matching item with the longest prefix
+//         const matchingItem = matchingItems.reduce((prev, current) => {
+//           const prevTerm = Object.keys(prev)[0].toLowerCase();
+//           const currentTerm = Object.keys(current)[0].toLowerCase();
+//           return prevTerm.length > currentTerm.length ? prev : current;
+//         });
+
+//         const originalTerm = Object.keys(matchingItem)[0]; // Store the original term
+//         const matchingDescription = matchingItem[originalTerm]; // Use the original term to retrieve description
+//         glossaryModalTitle.textContent = originalTerm;
+//         glossaryModalDescription.textContent = matchingDescription;
 
 //         // Filter terms with the same starting letter and exclude the current term
+//         const firstLetter = term.charAt(0).toUpperCase();
 //         const newTermsWithSameLetter = glossaryData
 //           .filter(
 //             (entry) =>
-//               Object.keys(entry)[0].charAt(0).toUpperCase() === firstLetter
+//               Object.keys(entry)[0].charAt(0).toUpperCase() === firstLetter &&
+//               Object.keys(entry)[0].toLowerCase() !== originalTerm.toLowerCase()
 //           )
-//           .map((entry) => Object.keys(entry)[0]);
+//           .map((entry) => {
+//             const key = Object.keys(entry)[0];
+//             return {
+//               term: key.toLowerCase(), // Convert the key to lowercase
+//               description: entry[key], // Use the original case description
+//             };
+//           });
 
 //         // Create links for terms with the same starting letter
-//         const links = createTermLinks(newTermsWithSameLetter);
+//         const links = createTermLinks(
+//           newTermsWithSameLetter.map((entry) => entry.term)
+//         );
 
 //         // Clear and insert the links into the wrapper
 //         glosaryModalSimilarLetter.innerHTML = "";
 //         attachLinkEventListeners(links);
 //         glosaryModalSimilarLetter.append(...links);
 
-//         // Update text content of modal
-//         glossaryModalTitle.textContent = term;
-//         glossaryModalDescription.textContent = matchingItem[term];
-
 //         // Open modal
-//         openModal();
+//         openModal(link);
 //       }
 //     });
 
