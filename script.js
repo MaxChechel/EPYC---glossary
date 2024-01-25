@@ -25,7 +25,11 @@ let lastFocusedElement;
 let clickEventListener; // Declare a variable to store the click event listener
 
 function closeModalOnClick(e, triggerElement) {
-  if (!glossaryModal.contains(e.target) && e.target !== triggerElement) {
+  if (
+    glossaryModal.classList.contains("is-active") &&
+    !glossaryModal.contains(e.target) &&
+    e.target !== triggerElement
+  ) {
     closeModal();
   }
 }
@@ -103,6 +107,7 @@ function attachLinkEventListeners(links) {
   links.forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
       const term = link.textContent.trim().toLowerCase();
       const matchingItem = glossaryData.find(
         (entry) => Object.keys(entry)[0].toLowerCase() === term
@@ -151,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
         glossaryAlphabetLinks.forEach((alphaLink) => {
           alphaLink.addEventListener("click", (e) => {
             e.preventDefault();
+            e.stopPropagation();
             const letter = alphaLink.textContent.trim();
 
             // Filter glossary data for terms starting with the clicked letter
@@ -178,6 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!link) return; // If the click did not occur on a link element
 
       e.preventDefault();
+      e.stopPropagation();
       const term = link.textContent.trim().toLowerCase(); // Convert term to lowercase
       const matchingItems = glossaryData.filter((entry) =>
         Object.keys(entry)[0].toLowerCase().startsWith(term)
