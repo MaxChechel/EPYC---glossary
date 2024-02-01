@@ -1,4 +1,4 @@
-const glossaryLinksContainer = document.querySelector(".text-rich-text");
+const glossaryLinksContainers = document.querySelectorAll(".text-rich-text");
 const glossaryModal = document.querySelector(".glossary-modal_component");
 const glossaryModalContent = document.querySelector(
   ".glossary-modal_content-wrapper"
@@ -179,59 +179,62 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
     // Event listener for both text links and same-letter links
-    glossaryLinksContainer.addEventListener("click", (e) => {
-      const link = e.target.closest("a:not([data-audio])");
-      if (!link) return; // If the click did not occur on a link element
+    glossaryLinksContainers.forEach((container) => {
+      container.addEventListener("click", (e) => {
+        const link = e.target.closest("a:not([data-audio])");
+        if (!link) return; // If the click did not occur on a link element
 
-      e.preventDefault();
-      e.stopPropagation();
-      const term = link.textContent.trim().toLowerCase(); // Convert term to lowercase
-      const matchingItems = glossaryData.filter((entry) =>
-        Object.keys(entry)[0].toLowerCase().startsWith(term)
-      );
-
-      if (matchingItems.length > 0) {
-        // Find the matching item with the longest prefix
-        const matchingItem = matchingItems.reduce((prev, current) => {
-          const prevTerm = Object.keys(prev)[0].toLowerCase();
-          const currentTerm = Object.keys(current)[0].toLowerCase();
-          return prevTerm.length > currentTerm.length ? prev : current;
-        });
-
-        const originalTerm = Object.keys(matchingItem)[0]; // Store the original term
-        const matchingDescription = matchingItem[originalTerm]; // Use the original term to retrieve description
-        glossaryModalTitle.textContent = originalTerm;
-        glossaryModalDescription.textContent = matchingDescription;
-
-        // Filter terms with the same starting letter and exclude the current term
-        const firstLetter = term.charAt(0).toUpperCase();
-        const newTermsWithSameLetter = glossaryData
-          .filter(
-            (entry) =>
-              Object.keys(entry)[0].charAt(0).toUpperCase() === firstLetter &&
-              Object.keys(entry)[0].toLowerCase() !== originalTerm.toLowerCase()
-          )
-          .map((entry) => {
-            const key = Object.keys(entry)[0];
-            return {
-              term: key.toLowerCase(), // Convert the key to lowercase
-              description: entry[key], // Use the original case description
-            };
-          });
-
-        // Create links for terms with the same starting letter
-        const links = createTermLinks(
-          newTermsWithSameLetter.map((entry) => entry.term)
+        e.preventDefault();
+        e.stopPropagation();
+        const term = link.textContent.trim().toLowerCase(); // Convert term to lowercase
+        const matchingItems = glossaryData.filter((entry) =>
+          Object.keys(entry)[0].toLowerCase().startsWith(term)
         );
 
-        // Clear and insert the links into the wrapper
-        glosaryModalSimilarLetter.innerHTML = "";
-        attachLinkEventListeners(links);
-        glosaryModalSimilarLetter.append(...links);
+        if (matchingItems.length > 0) {
+          // Find the matching item with the longest prefix
+          const matchingItem = matchingItems.reduce((prev, current) => {
+            const prevTerm = Object.keys(prev)[0].toLowerCase();
+            const currentTerm = Object.keys(current)[0].toLowerCase();
+            return prevTerm.length > currentTerm.length ? prev : current;
+          });
 
-        // Open modal
-        openModal(link);
-      }
+          const originalTerm = Object.keys(matchingItem)[0]; // Store the original term
+          const matchingDescription = matchingItem[originalTerm]; // Use the original term to retrieve description
+          glossaryModalTitle.textContent = originalTerm;
+          glossaryModalDescription.textContent = matchingDescription;
+
+          // Filter terms with the same starting letter and exclude the current term
+          const firstLetter = term.charAt(0).toUpperCase();
+          const newTermsWithSameLetter = glossaryData
+            .filter(
+              (entry) =>
+                Object.keys(entry)[0].charAt(0).toUpperCase() === firstLetter &&
+                Object.keys(entry)[0].toLowerCase() !==
+                  originalTerm.toLowerCase()
+            )
+            .map((entry) => {
+              const key = Object.keys(entry)[0];
+              return {
+                term: key.toLowerCase(), // Convert the key to lowercase
+                description: entry[key], // Use the original case description
+              };
+            });
+
+          // Create links for terms with the same starting letter
+          const links = createTermLinks(
+            newTermsWithSameLetter.map((entry) => entry.term)
+          );
+
+          // Clear and insert the links into the wrapper
+          glosaryModalSimilarLetter.innerHTML = "";
+          attachLinkEventListeners(links);
+          glosaryModalSimilarLetter.append(...links);
+
+          // Open modal
+          openModal(link);
+        }
+      });
     });
 
     // Attach click event listener to the outer wrapper of the modal
